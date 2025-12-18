@@ -12,9 +12,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Write sketch.js from Dify LLM output
+      - name: Write sketch.js
         run: |
-          cat << 'EOF' > sketch.js
+          mkdir -p games/${{ github.event.client_payload.user_id }}
+          cat << 'EOF' > games/${{ github.event.client_payload.user_id }}/sketch.js
           ${{ github.event.client_payload.game_js }}
           EOF
 
