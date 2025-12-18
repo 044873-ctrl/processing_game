@@ -32,7 +32,7 @@ jobs:
             exit 0
           fi
 
-          # game.js に書き込み
+          # sketch.js に書き込み
           printf "%s" "$JS" > sketch.js
 
       - name: Commit and push
