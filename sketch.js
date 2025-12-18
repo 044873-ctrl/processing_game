@@ -1,88 +1,92 @@
-let paddle;
-let ball;
-let bricks = [];
+var playerX;
+var playerY;
+var enemies = [];
+var bullets = [];
 
 function setup() {
   createCanvas(800, 600);
-  paddle = new Paddle();
-  ball = new Ball(paddle);
-  for (let i = 0; i < 16; i++) {
-    bricks[i] = new Brick(i * 50, 0, 50, 20);
+  playerX = width / 2;
+  playerY = height - 40;
+  for (var i = 0; i < 10; i++) {
+    enemies[i] = new Enemy(random(width), random(height / 2));
   }
 }
 
 function draw() {
   background(0);
-  paddle.display();
-  paddle.update();
-  ball.display();
-  ball.update();
-  for (let i = bricks.length - 1; i >= 0; i--) {
-    bricks[i].display();
-    if (ball.hits(bricks[i])) {
-      bricks.splice(i, 1);
-      ball.direction.y *= -1;
+
+  // Player
+  fill(255);
+  rect(playerX, playerY, 30, 30);
+
+  // Player movement
+  if (keyIsDown(LEFT_ARROW) && playerX > 0) {
+    playerX -= 5;
+  }
+  if (keyIsDown(RIGHT_ARROW) && playerX < width - 30) {
+    playerX += 5;
+  }
+
+  // Bullets
+  for (var i = bullets.length - 1; i >= 0; i--) {
+    bullets[i].update();
+    bullets[i].show();
+    if (bullets[i].hits(enemies)) {
+      bullets[i].remove();
+    }
+    if (bullets[i].offscreen()) {
+      bullets.splice(i, 1);
     }
   }
-}
 
-class Paddle {
-  constructor() {
-    this.width = 150;
-    this.height = 20;
-    this.x = (width - this.width) / 2;
-    this.speed = 2;
-  }
-  
-  display() {
-    rect(this.x, height - this.height, this.width, this.height);
-  }
-  
-  update() {
-    if (keyIsDown(LEFT_ARROW)) this.x -= this.speed;
-    if (keyIsDown(RIGHT_ARROW)) this.x += this.speed;
+  // Enemies
+  for (var i = 0; i < enemies.length; i++) {
+    enemies[i].show();
   }
 }
 
-class Ball {
-  constructor(paddle) {
-    this.radius = 10;
-    this.x = paddle.x + paddle.width / 2;
-    this.y = height - paddle.height - this.radius;
-    this.direction = createVector(1, -1);
-    this.speed = 2;
+function keyPressed() {
+  if (keyCode === 32) {
+    var bullet = new Bullet(playerX, playerY);
+    bullets.push(bullet);
   }
-  
-  display() {
-    ellipse(this.x, this.y, this.radius * 2);
+}
+
+function Bullet(x, y) {
+  this.x = x;
+  this.y = y;
+
+  this.show = function() {
+    fill(150);
+    rect(this.x, this.y, 10, 20);
   }
-  
-  update() {
-    this.x += this.speed * this.direction.x;
-    this.y += this.speed * this.direction.y;
-    if (this.x < 0 || this.x > width) this.direction.x *= -1;
-    if (this.y < 0) this.direction.y *= -1;
+
+  this.update = function() {
+    this.y -= 5;
   }
-  
-  hits(brick) {
-    let d = dist(this.x, this.y, brick.x, brick.y);
-    if (d < this.radius + brick.height / 2) {
-      return true;
-    } else {
-      return false;
+
+  this.offscreen = function() {
+    return (this.y < 0);
+  }
+
+  this.hits = function(enemies) {
+    for (var i = 0; i < enemies.length; i++) {
+      var d = dist(this.x, this.y, enemies[i].x, enemies[i].y);
+      if (d < 30) {
+        enemies.splice(i, 1);
+        return true;
+      }
     }
+    return false;
   }
 }
 
-class Brick {
-  constructor(x, y, w, h) {
-    this.x = x;
-    this.y = y;
-    this.width = w;
-    this.height = h;
-  }
-  
-  display() {
-    rect(this.x, this.y, this.width, this.height);
+function Enemy(x, y) {
+  this.x = x;
+  this.y = y;
+
+  this.show = function() {
+    fill(255, 0, 0);
+    rect(this.x, this.y, 40, 40);
   }
 }
