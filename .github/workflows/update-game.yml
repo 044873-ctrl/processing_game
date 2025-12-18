@@ -1,44 +1,30 @@
-name: Update Game JS from Dify
+name: Generate p5.js Game and Deploy
 
 on:
-  workflow_dispatch:
   repository_dispatch:
-    types: [update_game]
-
-permissions:
-  contents: write
+    types: [generate-game]
 
 jobs:
-  update:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Debug payload
-        run: |
-          echo "DEBUG PAYLOAD:"
-          echo '${{ github.event.client_payload.game_js }}'
-          echo ""
+    - name: Write sketch.js
+      run: |
+        cat << 'EOF' > sketch.js
+        ${{ github.event.client_payload.code }}
+        EOF
 
-      - name: Write scetch.js
-        run: |
-          JS='${{ github.event.client_payload.game_js }}'
+    - name: Commit and Push
+      run: |
+        git config user.name "github-actions"
+        git config user.email "actions@github.com"
+        git add sketch.js
+        git commit -m "update sketch.js"
+        git push
 
-          # 空チェック
-          if [ -z "$JS" ]; then
-            echo "No payload received"
-            exit 0
-          fi
-
-          # sketch.js に書き込み
-          printf "%s" "$JS" > sketch.js
-
-      - name: Commit and push
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add game.js
           git commit -m "Update sketch.js via Dify" || echo "No changes"
           git push
