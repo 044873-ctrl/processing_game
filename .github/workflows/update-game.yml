@@ -1,30 +1,10 @@
-name: Generate p5.js Game and Deploy
+name: Test Workflow
 
 on:
-  repository_dispatch:
-    types: [generate-game]
+  workflow_dispatch:
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Write sketch.js
-      run: |
-        cat << 'EOF' > sketch.js
-        ${{ github.event.client_payload.code }}
-        EOF
-
-    - name: Commit and Push
-      run: |
-        git config user.name "github-actions"
-        git config user.email "actions@github.com"
-        git add sketch.js
-        git commit -m "update sketch.js"
-        git push
-
-          git commit -m "Update sketch.js via Dify" || echo "No changes"
-          git push
+      - run: echo "Actions is working"
