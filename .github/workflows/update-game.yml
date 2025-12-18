@@ -22,7 +22,7 @@ jobs:
           echo '${{ github.event.client_payload.game_js }}'
           echo ""
 
-      - name: Write game.js
+      - name: Write scetch.js
         run: |
           JS='${{ github.event.client_payload.game_js }}'
 
