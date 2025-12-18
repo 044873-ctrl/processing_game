@@ -40,5 +40,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add game.js
-          git commit -m "Update game.js via Dify" || echo "No changes"
+          git commit -m "Update sketch.js via Dify" || echo "No changes"
           git push
