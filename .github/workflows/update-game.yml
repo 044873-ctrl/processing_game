@@ -17,16 +17,7 @@ jobs:
 
       - name: Write sketch.js
         run: |
-          USER_ID="${{ github.event.client_payload.user_id }}"
-
-          if [ -z "$USER_ID" ]; then
-            echo "ERROR: user_id is empty"
-            exit 1
-          fi
-
-          mkdir -p "$USER_ID"
-
-          cat << 'EOF' > "$USER_ID/sketch.js"
+          cat << 'EOF' > "sketch.js"
           ${{ github.event.client_payload.game_js }}
           EOF
 
@@ -39,6 +30,4 @@ jobs:
           git commit -m "Update game via Dify" || echo "No changes to commit"
           git push
 
-      - name: Dump payload
-        run: |
-          echo '${{ toJson(github.event.client_payload) }}'
+
