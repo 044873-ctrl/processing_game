@@ -15,10 +15,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Write sk
+      - name: Write sketch.js
         run: |
-          mkdir -p ${{ github.event.client_payload.user_id }}
-          cat << 'EOF' > ${{ github.event.client_payload.user_id }}/sketch.js
+          USER_ID="${{ github.event.client_payload.user_id }}"
+
+          if [ -z "$USER_ID" ]; then
+            echo "ERROR: user_id is empty"
+            exit 1
+          fi
+
+          mkdir -p "$USER_ID"
+
+          cat << 'EOF' > "$USER_ID/sketch.js"
           ${{ github.event.client_payload.game_js }}
           EOF
 
