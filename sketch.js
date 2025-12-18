@@ -1,122 +1,88 @@
-let player;
-let bullets = [];
-let enemies = [];
+let paddle;
+let ball;
+let bricks = [];
 
 function setup() {
-  createCanvas(400, 600);
-  player = new Player();
+  createCanvas(800, 600);
+  paddle = new Paddle();
+  ball = new Ball(paddle);
+  for (let i = 0; i < 16; i++) {
+    bricks[i] = new Brick(i * 50, 0, 50, 20);
+  }
 }
 
 function draw() {
   background(0);
-  
-  player.show();
-  player.move();
-
-  for (let i = bullets.length - 1; i >= 0; i--) {
-    bullets[i].show();
-    bullets[i].move();
-    for (let j = enemies.length - 1; j >= 0; j--) {
-      if (bullets[i].hits(enemies[j])) {
-        enemies[j].destroy();
-        enemies.splice(j, 1);
-        bullets[i].evaporate();
-        bullets.splice(i, 1);
-        break;
-      }
+  paddle.display();
+  paddle.update();
+  ball.display();
+  ball.update();
+  for (let i = bricks.length - 1; i >= 0; i--) {
+    bricks[i].display();
+    if (ball.hits(bricks[i])) {
+      bricks.splice(i, 1);
+      ball.direction.y *= -1;
     }
   }
-
-  if (random(1) < 0.01) {
-    enemies.push(new Enemy());
-  }
-
-  for (let e of enemies) {
-    e.show();
-    e.move();
-  }
 }
 
-function keyPressed() {
-  if (key === ' ') {
-    let bullet = new Bullet(player.x, height);
-    bullets.push(bullet);
-  }
-  if (keyCode === RIGHT_ARROW) {
-    player.setDir(1);
-  } else if (keyCode === LEFT_ARROW) {
-    player.setDir(-1);
-  }
-}
-
-function keyReleased() {
-  if (key !== ' ') {
-    player.setDir(0);
-  }
-}
-
-class Player {
+class Paddle {
   constructor() {
-    this.x = width / 2;
-    this.xdir = 0;
-  }
-
-  setDir(dir) {
-    this.xdir = dir;
-  }
-
-  move() {
-    this.x += this.xdir*5;
-  }
-
-  show() {
-    fill(255);
-    rectMode(CENTER);
-    rect(this.x, height-20, 20, 60);
-  }
-}
-
-class Bullet {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-
-  show() {
-    fill(50, 0, 200);
-    ellipse(this.x, this.y, 16, 16);
-  }
-
-  move() {
-    this.y = this.y - 5;
-  }
-
-  hits(enemy) {
-    let d = dist(this.x, this.y, enemy.x, enemy.y);
-    return d < 16;
+    this.width = 150;
+    this.height = 20;
+    this.x = (width - this.width) / 2;
+    this.speed = 2;
   }
   
-  evaporate() {
-    this.toDelete = true;
+  display() {
+    rect(this.x, height - this.height, this.width, this.height);
+  }
+  
+  update() {
+    if (keyIsDown(LEFT_ARROW)) this.x -= this.speed;
+    if (keyIsDown(RIGHT_ARROW)) this.x += this.speed;
   }
 }
 
-class Enemy {
-  constructor() {
-    this.x = random(width);
-    this.y = 0;
+class Ball {
+  constructor(paddle) {
+    this.radius = 10;
+    this.x = paddle.x + paddle.width / 2;
+    this.y = height - paddle.height - this.radius;
+    this.direction = createVector(1, -1);
+    this.speed = 2;
   }
-
-  move() {
-    this.y = this.y + 2;
+  
+  display() {
+    ellipse(this.x, this.y, this.radius * 2);
   }
-
-  show() {
-    fill(255, 0, 200);
-    ellipse(this.x, this.y, 24, 24);
+  
+  update() {
+    this.x += this.speed * this.direction.x;
+    this.y += this.speed * this.direction.y;
+    if (this.x < 0 || this.x > width) this.direction.x *= -1;
+    if (this.y < 0) this.direction.y *= -1;
   }
+  
+  hits(brick) {
+    let d = dist(this.x, this.y, brick.x, brick.y);
+    if (d < this.radius + brick.height / 2) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
 
-  destroy() {
-    this.toDelete = true;
+class Brick {
+  constructor(x, y, w, h) {
+    this.x = x;
+    this.y = y;
+    this.width = w;
+    this.height = h;
+  }
+  
+  display() {
+    rect(this.x, this.y, this.width, this.height);
   }
 }
