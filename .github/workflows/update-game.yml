@@ -18,7 +18,7 @@ jobs:
       - name: Write sk
         run: |
           mkdir -p games/${{ github.event.client_payload.user_id }}
-          cat << 'EOF' > games/${{ github.event.client_payload.user_id }}/sketch.js
+          cat << 'EOF' > ${{ github.event.client_payload.user_id }}/sketch.js
           ${{ github.event.client_payload.game_js }}
           EOF
 
