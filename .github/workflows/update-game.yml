@@ -15,36 +15,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Write sketch.js to user folder
+      - name: Write sk
         run: |
-          USER_ID="${{ github.event.client_payload.user_id }}"
-          mkdir -p "$USER_ID"
-
-          # index.html が無ければ作成
-          if [ ! -f "$USER_ID/index.html" ]; then
-            cat << 'EOF' > "$USER_ID/index.html"
-            <!DOCTYPE html>
-            <html lang="ja">
-            <head>
-              <meta charset="utf-8" />
-              <title>p5.js Game</title>
-              <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
-              <script src="sketch.js"></script>
-            </head>
-            <body></body>
-            </html>
-            EOF
-          fi
-
-          # sketch.js を上書き
-          cat << 'EOF' > "$USER_ID/sketch.js"
+          mkdir -p games/${{ github.event.client_payload.user_id }}
+          cat << 'EOF' > games/${{ github.event.client_payload.user_id }}/sketch.js
           ${{ github.event.client_payload.game_js }}
           EOF
+
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add "$USER_ID"
-          git commit -m "Update game for $USER_ID via Dify" || echo "No changes to commit"
+          git add sketch.js
+          git commit -m "Update game via Dify" || echo "No changes to commit"
           git push
