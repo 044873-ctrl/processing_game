@@ -39,9 +39,6 @@ jobs:
           git commit -m "Update game via Dify" || echo "No changes to commit"
           git push
 
-      - name: Show written file
+      - name: Dump payload
         run: |
-          echo "===== sketch.js head ====="
-          head -n 5 "$USER_ID/sketch.js"
-          echo "===== git diff ====="
-          git diff
+          echo '${{ toJson(github.event.client_payload) }}'
