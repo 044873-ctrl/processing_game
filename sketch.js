@@ -1,197 +1,185 @@
 let player;
-let playerSpeed;
-let playerRadius;
-let playerBullets;
-let enemyRows;
-let enemyCols;
-let enemies;
-let enemyRadius;
-let enemyVX;
-let enemyMoveDown;
-let enemyFireInterval;
-let enemyFireCounter;
-let enemyBullets;
-let enemyBulletRadius;
-let enemyBulletSpeed;
-let score;
-let gameState;
-let leftPressed;
-let rightPressed;
-let spacePressed;
-function setup(){
-  createCanvas(400,600);
-  playerRadius = 16;
-  player = {x: width/2, y: height - 40, r: playerRadius};
-  playerSpeed = 5;
+let playerBullets = [];
+let enemies = [];
+let enemyBullets = [];
+let enemyDir = 1;
+let enemySpeed = 1;
+let enemyDrop = 20;
+let cols = 6;
+let rows = 4;
+let enemyRadius = 12;
+let playerRadius = 12;
+let playerSpeed = 5;
+let bulletRadius = 4;
+let bulletSpeed = 8;
+let enemyBulletSpeed = 5;
+let fireInterval = 60;
+let fireTimer = 0;
+let score = 0;
+let gameState = 'playing';
+function setup() {
+  createCanvas(400, 600);
+  resetGame();
+  textAlign(LEFT, TOP);
+  textSize(16);
+}
+function resetGame() {
+  player = { x: width / 2, y: height - 30 };
   playerBullets = [];
-  enemyRows = 4;
-  enemyCols = 6;
-  enemies = [];
-  enemyRadius = 12;
-  let marginLeft = 40;
-  let marginTop = 60;
-  let spacingX = (width - marginLeft*2) / (enemyCols - 1);
-  let spacingY = 40;
-  for(let row=0; row<enemyRows; row++){
-    for(let col=0; col<enemyCols; col++){
-      let ex = marginLeft + col * spacingX;
-      let ey = marginTop + row * spacingY;
-      enemies.push({x: ex, y: ey, r: enemyRadius, alive: true});
-    }
-  }
-  enemyVX = 1.2;
-  enemyMoveDown = 18;
-  enemyFireInterval = 60;
-  enemyFireCounter = 0;
   enemyBullets = [];
-  enemyBulletRadius = 4;
-  enemyBulletSpeed = 5;
+  enemies = [];
+  enemyDir = 1;
+  enemySpeed = 1;
+  fireTimer = 0;
   score = 0;
   gameState = 'playing';
-  leftPressed = false;
-  rightPressed = false;
-  spacePressed = false;
-  textSize(16);
-  textAlign(LEFT, TOP);
+  let spacingX = 50;
+  let totalWidth = (cols - 1) * spacingX;
+  let startX = (width - totalWidth) / 2;
+  let startY = 60;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let ex = startX + c * spacingX;
+      let ey = startY + r * 40;
+      enemies.push({ x: ex, y: ey });
+    }
+  }
 }
-function draw(){
+function draw() {
   background(0);
   fill(255);
-  if(gameState === 'playing'){
-    if(leftPressed && !rightPressed){
+  text('Score: ' + score, 10, 10);
+  if (gameState === 'playing') {
+    if (keyIsDown(LEFT_ARROW)) {
       player.x -= playerSpeed;
-    } else if(rightPressed && !leftPressed){
+    }
+    if (keyIsDown(RIGHT_ARROW)) {
       player.x += playerSpeed;
     }
-    player.x = constrain(player.x, player.r, width - player.r);
-    for(let i = playerBullets.length - 1; i >= 0; i--){
+    if (player.x < playerRadius) {
+      player.x = playerRadius;
+    }
+    if (player.x > width - playerRadius) {
+      player.x = width - playerRadius;
+    }
+    if (keyIsDown(32) && playerBullets.length === 0) {
+      let pb = { x: player.x, y: player.y - playerRadius - bulletRadius - 1 };
+      playerBullets.push(pb);
+    }
+    for (let i = playerBullets.length - 1; i >= 0; i--) {
       let b = playerBullets[i];
-      b.y += b.vy;
-      if(b.y + b.r < 0){
-        playerBullets.splice(i,1);
+      b.y -= bulletSpeed;
+      if (b.y < -bulletRadius) {
+        playerBullets.splice(i, 1);
         continue;
       }
-      for(let j = 0; j < enemies.length; j++){
+      let hit = false;
+      for (let j = enemies.length - 1; j >= 0; j--) {
         let e = enemies[j];
-        if(e.alive){
-          let d = dist(b.x, b.y, e.x, e.y);
-          if(d <= b.r + e.r){
-            e.alive = false;
-            playerBullets.splice(i,1);
-            score += 100;
-            break;
-          }
+        let dx = b.x - e.x;
+        let dy = b.y - e.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist <= bulletRadius + enemyRadius) {
+          enemies.splice(j, 1);
+          playerBullets.splice(i, 1);
+          score += 100;
+          hit = true;
+          break;
         }
       }
-    }
-    let minX = width;
-    let maxX = 0;
-    let anyAlive = false;
-    for(let i = 0; i < enemies.length; i++){
-      if(enemies[i].alive){
-        anyAlive = true;
-        if(enemies[i].x < minX) minX = enemies[i].x;
-        if(enemies[i].x > maxX) maxX = enemies[i].x;
+      if (hit) {
+        continue;
       }
     }
-    if(!anyAlive){
+    fireTimer++;
+    if (fireTimer >= fireInterval) {
+      fireTimer = 0;
+      if (enemies.length > 0) {
+        let idx = Math.floor(Math.random() * enemies.length);
+        let shooter = enemies[idx];
+        let eb = { x: shooter.x, y: shooter.y + enemyRadius + bulletRadius + 1 };
+        enemyBullets.push(eb);
+      }
+    }
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+      let eb = enemyBullets[i];
+      eb.y += enemyBulletSpeed;
+      if (eb.y > height + bulletRadius) {
+        enemyBullets.splice(i, 1);
+        continue;
+      }
+      let dxp = eb.x - player.x;
+      let dyp = eb.y - player.y;
+      let distp = Math.sqrt(dxp * dxp + dyp * dyp);
+      if (distp <= bulletRadius + playerRadius) {
+        gameState = 'over';
+      }
+    }
+    let minX = Infinity;
+    let maxX = -Infinity;
+    for (let i = 0; i < enemies.length; i++) {
+      let e = enemies[i];
+      if (e.x < minX) {
+        minX = e.x;
+      }
+      if (e.x > maxX) {
+        maxX = e.x;
+      }
+    }
+    if (enemies.length === 0) {
       gameState = 'clear';
     } else {
-      if(minX - enemyRadius <= 0 || maxX + enemyRadius >= width){
-        enemyVX = -enemyVX;
-        for(let i = 0; i < enemies.length; i++){
-          enemies[i].y += enemyMoveDown;
-        }
-      } else {
-        for(let i = 0; i < enemies.length; i++){
-          enemies[i].x += enemyVX;
+      if ((enemyDir > 0 && maxX + enemyRadius + enemySpeed > width) || (enemyDir < 0 && minX - enemyRadius - enemySpeed < 0)) {
+        enemyDir *= -1;
+        for (let i = 0; i < enemies.length; i++) {
+          enemies[i].y += enemyDrop;
         }
       }
-    }
-    enemyFireCounter++;
-    if(enemyFireCounter >= enemyFireInterval && anyAlive){
-      let aliveIndices = [];
-      for(let i = 0; i < enemies.length; i++){
-        if(enemies[i].alive) aliveIndices.push(i);
+      for (let i = 0; i < enemies.length; i++) {
+        enemies[i].x += enemyDir * enemySpeed;
       }
-      if(aliveIndices.length > 0){
-        let idx = aliveIndices[floor(random(aliveIndices.length))];
-        let shooter = enemies[idx];
-        enemyBullets.push({x: shooter.x, y: shooter.y + shooter.r + enemyBulletRadius + 1, r: enemyBulletRadius, vy: enemyBulletSpeed});
-      }
-      enemyFireCounter = 0;
-    }
-    for(let i = enemyBullets.length - 1; i >= 0; i--){
-      let eb = enemyBullets[i];
-      eb.y += eb.vy;
-      if(eb.y - eb.r > height){
-        enemyBullets.splice(i,1);
-        continue;
-      }
-      let d = dist(eb.x, eb.y, player.x, player.y);
-      if(d <= eb.r + player.r){
-        gameState = 'gameover';
-        enemyBullets.splice(i,1);
-        break;
-      }
-    }
-    if(spacePressed){
-      if(playerBullets.length === 0){
-        playerBullets.push({x: player.x, y: player.y - player.r - 4, r:4, vy: -8});
-      }
-      spacePressed = false;
     }
   }
-  fill(0,0,255);
-  ellipse(player.x, player.y, player.r*2, player.r*2);
-  fill(255,255,0);
-  for(let i = 0; i < playerBullets.length; i++){
-    let b = playerBullets[i];
-    ellipse(b.x, b.y, b.r*2, b.r*2);
-  }
-  fill(255,0,0);
-  for(let i = 0; i < enemies.length; i++){
+  fill(0, 0, 255);
+  ellipse(player.x, player.y, playerRadius * 2, playerRadius * 2);
+  fill(255, 255, 0);
+  for (let i = 0; i < enemies.length; i++) {
     let e = enemies[i];
-    if(e.alive){
-      ellipse(e.x, e.y, e.r*2, e.r*2);
-    }
-  }
-  fill(255,150,0);
-  for(let i = 0; i < enemyBullets.length; i++){
-    let eb = enemyBullets[i];
-    ellipse(eb.x, eb.y, eb.r*2, eb.r*2);
+    ellipse(e.x, e.y, enemyRadius * 2, enemyRadius * 2);
   }
   fill(255);
-  text("Score: " + score, 8, 8);
-  if(gameState === 'gameover'){
-    textAlign(CENTER, CENTER);
+  for (let i = 0; i < playerBullets.length; i++) {
+    let b = playerBullets[i];
+    ellipse(b.x, b.y, bulletRadius * 2, bulletRadius * 2);
+  }
+  fill(255, 0, 0);
+  for (let i = 0; i < enemyBullets.length; i++) {
+    let eb = enemyBullets[i];
+    ellipse(eb.x, eb.y, bulletRadius * 2, bulletRadius * 2);
+  }
+  if (gameState === 'over') {
+    fill(255);
     textSize(32);
-    text("GAME OVER", width/2, height/2);
-    textSize(16);
-    textAlign(LEFT, TOP);
-  } else if(gameState === 'clear'){
     textAlign(CENTER, CENTER);
-    textSize(32);
-    text("CLEAR!", width/2, height/2);
+    text('GAME OVER', width / 2, height / 2 - 20);
     textSize(16);
+    text('Press R to restart', width / 2, height / 2 + 20);
     textAlign(LEFT, TOP);
+    textSize(16);
+  }
+  if (gameState === 'clear') {
+    fill(255);
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    text('CLEAR!', width / 2, height / 2 - 20);
+    textSize(16);
+    text('Press R to restart', width / 2, height / 2 + 20);
+    textAlign(LEFT, TOP);
+    textSize(16);
   }
 }
-function keyPressed(){
-  if(keyCode === LEFT_ARROW){
-    leftPressed = true;
-  } else if(keyCode === RIGHT_ARROW){
-    rightPressed = true;
-  } else if(key === ' '){
-    spacePressed = true;
-  }
-}
-function keyReleased(){
-  if(keyCode === LEFT_ARROW){
-    leftPressed = false;
-  } else if(keyCode === RIGHT_ARROW){
-    rightPressed = false;
-  } else if(key === ' '){
-    spacePressed = false;
+function keyPressed() {
+  if ((key === 'r' || key === 'R') && gameState !== 'playing') {
+    resetGame();
   }
 }
