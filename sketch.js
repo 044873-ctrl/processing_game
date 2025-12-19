@@ -1,14 +1,15 @@
 let player;
-let enemies = [];
 let bullets = [];
+let enemies = [];
+let explosions = [];
 let stars = [];
 let score = 0;
 let gameOver = false;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  player = new Player(width / 2, height - 50);
-  for (let i = 0; i < 100; i++) {
+  player = new Player();
+  for (let i = 0; i < 200; i++) {
     stars[i] = new Star();
   }
 }
@@ -17,61 +18,62 @@ function draw() {
   background(0);
 
   stars.forEach(star => {
-    star.move();
     star.show();
+    star.update();
   });
 
   if (!gameOver) {
     player.show();
+
     if (keyIsDown(LEFT_ARROW)) {
       player.move(-5);
     }
+
     if (keyIsDown(RIGHT_ARROW)) {
       player.move(5);
     }
 
-    if (random() < 0.01) {
-      enemies.push(new Enemy(random(width), -20));
-    }
-
-    for (let bullet of bullets) {
-      bullet.move();
+    bullets.forEach(bullet => {
       bullet.show();
-      if (bullet.offscreen()) {
-        bullets.splice(bullets.indexOf(bullet), 1);
-      } else {
-        for (let enemy of enemies) {
-          if (bullet.hits(enemy)) {
-            score += 10;
-            bullets.splice(bullets.indexOf(bullet), 1);
-            enemies.splice(enemies.indexOf(enemy), 1);
-            break;
-          }
-        }
-      }
-    }
+      bullet.update();
 
-    for (let enemy of enemies) {
-      enemy.move();
+      enemies.forEach(enemy => {
+        if (bullet.hits(enemy)) {
+          score++;
+          bullets.splice(bullets.indexOf(bullet), 1);
+          enemies.splice(enemies.indexOf(enemy), 1);
+          explosions.push(new Explosion(enemy.x, enemy.y));
+        }
+      });
+    });
+
+    enemies.forEach(enemy => {
       enemy.show();
-      if (enemy.hits(player) || enemy.offscreen()) {
+      enemy.update();
+
+      if (enemy.y > height) {
         gameOver = true;
       }
-    }
+    });
 
-    textSize(32);
-    fill(255);
-    text("Score: " + score, 10, 50);
+    explosions.forEach(explosion => {
+      explosion.show();
+      explosion.update();
+    });
+
+    if (random() < 0.01) {
+      enemies.push(new Enemy());
+    }
   } else {
-    textSize(64);
     fill(255);
-    text("Game Over", width / 2 - 100, height / 2);
-    noLoop();
+    textSize(32);
+    text('Game Over', width / 2, height / 2);
+    text('Score: ' + score, width / 2, height / 2 + 50);
   }
 }
 
 function keyPressed() {
-  if (key === ' ') {
-    bullets.push(new Bullet(player.x, height - 60));
+  if (keyCode === 32) {
+    bullets.push(new Bullet(player.x, height));
   }
 }
