@@ -1,228 +1,158 @@
-let cols=10;
-let rows=10;
-let cellSize=40;
-let minesCount=15;
-let grid=[];
-let gameOver=false;
-let win=false;
-let canvas;
-function setup(){
-  canvas=createCanvas(cols*cellSize,rows*cellSize);
-  canvas.elt.oncontextmenu=function(){return false;};
-  textAlign(CENTER,CENTER);
-  textSize(18);
-  setupGrid();
+let cols = 20;
+let rows = 20;
+let cellSize = 20;
+let snake = [];
+let dirX = 1;
+let dirY = 0;
+let moveInterval = 10;
+let moveCounter = 0;
+let food = {x: 0, y: 0};
+let score = 0;
+let gameOver = false;
+function setup() {
+  createCanvas(cols * cellSize, rows * cellSize);
+  let centerX = floor(cols / 2);
+  let centerY = floor(rows / 2);
+  snake = [];
+  snake.push({x: centerX - 2, y: centerY});
+  snake.push({x: centerX - 1, y: centerY});
+  snake.push({x: centerX, y: centerY});
+  dirX = 1;
+  dirY = 0;
+  moveCounter = 0;
+  score = 0;
+  gameOver = false;
+  spawnFood();
+  textAlign(LEFT, TOP);
+  textSize(16);
+  noStroke();
 }
-function setupGrid(){
-  grid=[];
-  gameOver=false;
-  win=false;
-  for(let i=0;i<cols;i++){
-    grid[i]=[];
-    for(let j=0;j<rows;j++){
-      let cell=createCell(i,j);
-      grid[i][j]=cell;
-    }
+function draw() {
+  background(30);
+  fill(255);
+  text("Score: " + score, 8, 4);
+  for (let i = 0; i < snake.length; i++) {
+    let seg = snake[i];
+    fill(0, 200, 0);
+    rect(seg.x * cellSize, seg.y * cellSize, cellSize, cellSize);
   }
-  placeMines();
-  computeCounts();
-}
-function createCell(i,j){
-  return {
-    i:i,
-    j:j,
-    x:i*cellSize,
-    y:j*cellSize,
-    w:cellSize,
-    isMine:false,
-    state:'covered',
-    count:0
-  };
-}
-function placeMines(){
-  let indices=[];
-  for(let k=0;k<cols*rows;k++){
-    indices.push(k);
-  }
-  for(let k=indices.length-1;k>0;k--){
-    let r=floor(random(k+1));
-    let tmp=indices[k];
-    indices[k]=indices[r];
-    indices[r]=tmp;
-  }
-  for(let m=0;m<minesCount;m++){
-    let idx=indices[m];
-    let i=floor(idx/rows);
-    let j=idx%rows;
-    if(i>=0 && i<cols && j>=0 && j<rows){
-      grid[i][j].isMine=true;
-    }
-  }
-}
-function computeCounts(){
-  for(let i=0;i<cols;i++){
-    for(let j=0;j<rows;j++){
-      let c=0;
-      for(let di=-1;di<=1;di++){
-        for(let dj=-1;dj<=1;dj++){
-          if(di===0 && dj===0)continue;
-          let ni=i+di;
-          let nj=j+dj;
-          if(ni>=0 && ni<cols && nj>=0 && nj<rows){
-            if(grid[ni][nj].isMine) c++;
+  fill(200, 50, 50);
+  rect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
+  if (!gameOver) {
+    moveCounter++;
+    if (moveCounter >= moveInterval) {
+      moveCounter = 0;
+      let head = snake[snake.length - 1];
+      let newX = head.x + dirX;
+      let newY = head.y + dirY;
+      if (newX < 0 || newX >= cols || newY < 0 || newY >= rows) {
+        gameOver = true;
+      } else {
+        let willGrow = (newX === food.x && newY === food.y);
+        let collided = false;
+        for (let i = 0; i < snake.length; i++) {
+          if (i === 0 && !willGrow) {
+            continue;
+          }
+          let seg = snake[i];
+          if (seg.x === newX && seg.y === newY) {
+            collided = true;
+            break;
+          }
+        }
+        if (collided) {
+          gameOver = true;
+        } else {
+          snake.push({x: newX, y: newY});
+          if (willGrow) {
+            score++;
+            spawnFood();
+          } else {
+            snake.shift();
           }
         }
       }
-      grid[i][j].count=c;
     }
+  }
+  if (gameOver) {
+    fill(255, 0, 0);
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    text("Game Over", width / 2, height / 2 - 16);
+    textSize(18);
+    text("Score: " + score, width / 2, height / 2 + 16);
+    textAlign(LEFT, TOP);
+    textSize(16);
   }
 }
-function draw(){
-  background(220);
-  for(let i=0;i<cols;i++){
-    for(let j=0;j<rows;j++){
-      drawCell(grid[i][j]);
-    }
-  }
-  if(gameOver || win){
-    fill(0,0,0,120);
-    rect(0,0,width,height);
-    fill(255);
-    textSize(28);
-    if(win){
-      text("You Win",width/2,height/2);
-    } else {
-      text("Game Over",width/2,height/2);
-    }
-    textSize(14);
-    text("Left click to restart",width/2,height/2+30);
-  }
-}
-function drawCell(cell){
-  stroke(0);
-  if(cell.state==='covered'){
-    fill(180);
-    rect(cell.x,cell.y,cell.w,cell.w);
-    if(cell.state==='covered' && cell.flagged){
-    }
-    if(cell.state==='covered' && cell.flagged){
-    }
-    if(cell.state==='covered' && cell.flagged){
-    }
-    if(cell.state==='covered' && isFlag(cell)){
-    }
-    if(cell.state==='covered' && hasFlag(cell)){
-    }
-    if(cell.state==='covered'){
-    }
-  } else if(cell.state==='open'){
-    fill(240);
-    rect(cell.x,cell.y,cell.w,cell.w);
-    if(cell.isMine){
-      fill(150,0,0);
-      ellipse(cell.x+cell.w/2,cell.y+cell.w/2,cell.w*0.6,cell.w*0.6);
-    } else if(cell.count>0){
-      fill(0);
-      textSize(18);
-      text(cell.count,cell.x+cell.w/2,cell.y+cell.w/2);
-    }
-  }
-  if(cell.state==='covered' && cell.flagged){
-    fill(255,0,0);
-    triangle(cell.x+cell.w*0.2,cell.y+cell.w*0.8,cell.x+cell.w*0.2,cell.y+cell.w*0.2,cell.x+cell.w*0.7,cell.y+cell.w*0.5);
-    stroke(0);
-    line(cell.x+cell.w*0.2,cell.y+cell.w*0.9,cell.x+cell.w*0.2,cell.y+cell.w*0.1);
-  }
-  if(gameOver && cell.isMine && cell.state!=='open'){
-    noFill();
-    stroke(0);
-    rect(cell.x,cell.y,cell.w,cell.w);
-    fill(255,0,0,180);
-    rect(cell.x,cell.y,cell.w,cell.w);
-    fill(0);
-    ellipse(cell.x+cell.w/2,cell.y+cell.w/2,cell.w*0.5,cell.w*0.5);
-  }
-}
-function isFlag(cell){
-  return cell.flagged===true;
-}
-function hasFlag(cell){
-  return cell.flagged===true;
-}
-function mousePressed(){
-  if(gameOver || win){
-    if(mouseButton===LEFT){
-      setupGrid();
-    }
+function keyPressed() {
+  if (gameOver) {
     return;
   }
-  let i=floor(mouseX/cellSize);
-  let j=floor(mouseY/cellSize);
-  if(i<0 || i>=cols || j<0 || j>=rows) return;
-  let cell=grid[i][j];
-  if(mouseButton===RIGHT){
-    if(cell.state==='covered'){
-      cell.flagged=!cell.flagged;
+  if (keyCode === LEFT_ARROW) {
+    if (!(dirX === 1 && dirY === 0)) {
+      dirX = -1;
+      dirY = 0;
     }
-    return;
-  }
-  if(mouseButton===LEFT){
-    if(cell.state==='covered' && !cell.flagged){
-      if(cell.isMine){
-        revealMines();
-        gameOver=true;
-        return;
-      } else {
-        openCell(i,j);
-        checkWin();
-      }
+  } else if (keyCode === RIGHT_ARROW) {
+    if (!(dirX === -1 && dirY === 0)) {
+      dirX = 1;
+      dirY = 0;
     }
-  }
-}
-function revealMines(){
-  for(let i=0;i<cols;i++){
-    for(let j=0;j<rows;j++){
-      if(grid[i][j].isMine){
-        grid[i][j].state='open';
-      }
+  } else if (keyCode === UP_ARROW) {
+    if (!(dirX === 0 && dirY === 1)) {
+      dirX = 0;
+      dirY = -1;
+    }
+  } else if (keyCode === DOWN_ARROW) {
+    if (!(dirX === 0 && dirY === -1)) {
+      dirX = 0;
+      dirY = 1;
     }
   }
 }
-function openCell(si,sj){
-  let stack=[];
-  if(grid[si][sj].state!=='covered') return;
-  grid[si][sj].state='open';
-  if(grid[si][sj].count===0){
-    stack.push({i:si,j:sj});
-  }
-  while(stack.length>0){
-    let pos=stack.pop();
-    for(let di=-1;di<=1;di++){
-      for(let dj=-1;dj<=1;dj++){
-        let ni=pos.i+di;
-        let nj=pos.j+dj;
-        if(ni>=0 && ni<cols && nj>=0 && nj<rows){
-          let nc=grid[ni][nj];
-          if(nc.state==='covered' && !nc.flagged){
-            nc.state='open';
-            if(nc.count===0 && !nc.isMine){
-              stack.push({i:ni,j:nj});
+function spawnFood() {
+  let attempts = 0;
+  while (true) {
+    let fx = floor(random(cols));
+    let fy = floor(random(rows));
+    let occupied = false;
+    for (let i = 0; i < snake.length; i++) {
+      if (snake[i].x === fx && snake[i].y === fy) {
+        occupied = true;
+        break;
+      }
+    }
+    if (!occupied) {
+      food.x = fx;
+      food.y = fy;
+      return;
+    }
+    attempts++;
+    if (attempts > 1000) {
+      let found = false;
+      for (let y = 0; y < rows && !found; y++) {
+        for (let x = 0; x < cols; x++) {
+          let occ = false;
+          for (let i = 0; i < snake.length; i++) {
+            if (snake[i].x === x && snake[i].y === y) {
+              occ = true;
+              break;
             }
           }
+          if (!occ) {
+            food.x = x;
+            food.y = y;
+            found = true;
+            break;
+          }
         }
       }
+      if (!found) {
+        food.x = 0;
+        food.y = 0;
+      }
+      return;
     }
-  }
-}
-function checkWin(){
-  let opened=0;
-  for(let i=0;i<cols;i++){
-    for(let j=0;j<rows;j++){
-      if(grid[i][j].state==='open' && !grid[i][j].isMine) opened++;
-    }
-  }
-  if(opened===cols*rows-minesCount){
-    win=true;
-    revealMines();
   }
 }
